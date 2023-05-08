@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Reaction Game</title>
+  <style>
+    #game-container {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 0 auto;
+      background-color: #ccc;
+    }
+    .object {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #008111;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<h1>Reaction Game</h1>
+<progress id="progress-bar" value="0" max="45"></progress>
+<div id="game-container"></div>
+<div>
+  Score: <span id="score-display">0</span>
+</div>
+<button id="start-button">Start Game</button>
+<script>
+  const gameContainer = document.getElementById('game-container');
+  const startButton = document.getElementById('start-button');
+  const progressBar = document.getElementById('progress-bar');
+  let score = 0;
+  let seconds = 30;
+  let speed = 1000;
+  let intervalId;
+  let timeMultiplier = 1;
+  let gameInProgress = false;
+  let gameTimer;
+  let timers = [];
+
+  startButton.addEventListener('click',() => {
+    resetGame();
+    startGame();
+  });
+
+  function resetGame() {
+    score = 0;
+    seconds = 30;
+    speed = 1000;
+    timeMultiplier = 1;
+    gameInProgress = false;
+    timers.forEach(timerId => clearTimeout(timerId));
+    timers = [];
+    gameContainer.innerHTML = '';
+    clearInterval(intervalId);
+    clearTimeout(gameTimer);
+    progressBar.value = 0;
+    document.getElementById('score-display').textContent = score;
+  }
+
+  function startGame() {
+
+    let elapsedSeconds = 0;
+
+    const updateProgress = setInterval(() => {
+      elapsedSeconds++;
+      progressBar.value = elapsedSeconds;
+      if (elapsedSeconds >= 45) {
+        clearInterval(updateProgress);
+      }
+    }, 1000);
+
+    gameInProgress = true;
+    intervalId = setInterval(createObject, speed);
+    // Запуск игры на 45 секунд
+    gameTimer = setTimeout(() => {
+
+      clearTimers();
+      endGame();
+    }, 45000);
+  }
+
+  function createObject() {
+
+    const object = document.createElement('div');
+    object.classList.add('object');
+    object.style.left = Math.floor(Math.random() * (gameContainer.offsetWidth - 50)) + 'px';
+    object.style.top = Math.floor(Math.random() * (gameContainer.offsetHeight - 50)) + 'px';
+    object.addEventListener('click', handleClick);
+    gameContainer.appendChild(object);
+
+    // Установка таймера на удаление кружка через 2 секунды, умноженную на множитель времени и количество очков
+    const timeToLive = (2000 / timeMultiplier) - (score * 100);
+    const timerId = setTimeout(() => {
+      gameContainer.removeChild(object);
+    }, timeToLive);
+
+    // Добавление таймера в массив для последующего удаления
+    timers.push(timerId);
+
+    // Увеличение множителя времени каждые 10 очков
+    if (score % 10 === 0 && score > 0) {
+      timeMultiplier *= 0.9;
+      speed *= 0.999;
+    }
+  }
+
+  function clearTimers() {
+    timers.forEach(timerId => clearInterval(timerId));
+    clearInterval(intervalId);
+  }
+
+  function handleClick(event) {
+    const object = event.target;
+    score++;
+    gameContainer.removeChild(object);
+    document.getElementById('score-display').textContent = score;
+  }
+
+  function endGame() {
+    clearInterval(intervalId);
+    clearTimeout(gameTimer);
+    alert(`Game over! Your score: ${score}`);
+    gameInProgress = false;
+  }
+</script>
+</body>
+</html>
